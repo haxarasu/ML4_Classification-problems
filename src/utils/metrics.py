@@ -7,26 +7,83 @@ from sklearn.metrics import (
 )
 
 
+class S21RocAuc:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def _validate(y_true, proba):
+        y_true = np.asarray(y_true)
+        proba = np.asarray(proba)
+
+        if y_true.shape != proba.shape:
+            raise ValueError("y_true and proba must have the same shape")
+
+        uniq = np.unique(y_true)
+        if not np.array_equal(np.sort(uniq), [0, 1]):
+            raise ValueError("y_true must be binary {0,1}")
+
+        if np.any((proba < 0) | (proba > 1)):
+            raise ValueError("proba must be between 0 and 1")
+
+        n_pos = int((y_true == 1).sum())
+        n_neg = int((y_true == 0).sum())
+        
+        if n_pos == 0 or n_neg == 0:
+            raise ValueError(
+                "y_true must contain at least one positive and one negative example (else -> division by zero)"
+            )
+
+        return y_true, proba, n_pos, n_neg
+
+
+    def s21_roc_auc_score(self, y_true, proba):
+        y, s, n_pos, n_neg = self._validate(y_true, proba)
+
+        uniq, inv = np.unique(s, return_inverse=True)
+        pos_per_score = np.bincount(inv, weights=(y == 1))
+        neg_per_score = np.bincount(inv, weights=(y == 0))
+
+        order = np.argsort(-uniq)
+        tp = np.cumsum(pos_per_score[order])
+        fp = np.cumsum(neg_per_score[order])
+
+        tpr = np.r_[0.0, tp] / n_pos
+        fpr = np.r_[0.0, fp] / n_neg
+
+        auc = np.trapz(tpr, fpr)
+
+        return float(auc)
+
+
+    def s21_gini_score(self, y_true, proba):
+        auc = self.s21_roc_auc_score(y_true, proba)
+        gini = 2.0 * auc - 1.0
+
+        return gini
+
+
 class Calculation:
-    def __init__(self, threshold=0.5):
-        self.threshold = float(threshold)
+    def __init__(self, threshold=None):
+        self.threshold = 0.5 if threshold is None else float(threshold)
+
 
     @staticmethod
     def _validate_binary(y):
         arr = np.asarray(y).ravel()
         uniq = np.unique(arr)
-        
+
         if not np.array_equal(np.sort(uniq), [0, 1]):
             raise ValueError("y must be binary and contain both classes {0,1}")
 
         return arr.astype(int)
 
-    
+
     @staticmethod
     def _validate_proba(y_true, proba):
         y = Calculation._validate_binary(y_true)
         scores = np.asarray(proba, dtype=float).ravel()
-    
+
         if scores.shape != y.shape:
             raise ValueError("y_true and proba must have the same length")
 
@@ -64,10 +121,10 @@ class Calculation:
 
     def _s21_recall(self, y_true, y_pred=None, proba=None, threshold=None):
         y, y_hat = self._prepare_labels(y_true, y_pred=y_pred, proba=proba, threshold=threshold)
-        
+
         tp = np.sum((y == 1) & (y_hat == 1))
         fn = np.sum((y == 1) & (y_hat == 0))
-        
+
         if tp + fn == 0:
             raise ValueError("Recall is undefined when there are no positive samples")
 
@@ -79,7 +136,7 @@ class Calculation:
 
         tp = np.sum((y == 1) & (y_hat == 1))
         fp = np.sum((y == 0) & (y_hat == 1))
-        
+
         if tp + fp == 0:
             raise ValueError("Precision is undefined when there are no predicted positives")
 
@@ -91,11 +148,10 @@ class Calculation:
         rec = self._s21_recall(y_true, y_pred=y_pred, proba=proba, threshold=threshold)
 
         if prec + rec == 0:
-            print("Precision or recall = 0")
-
             return 0.0
 
         return float(2.0 * prec * rec / (prec + rec))
+
 
     def _s21_AUC_PR(self, y_true, proba):
         y, scores = self._validate_proba(y_true, proba)
@@ -114,6 +170,7 @@ class Calculation:
         auc_pr = np.sum((recall[1:] - recall[:-1]) * precision[1:])
 
         return float(auc_pr)
+
 
     def compare_to_original(self, y_true, proba, threshold=None):
         thr = self.threshold if threshold is None else float(threshold)

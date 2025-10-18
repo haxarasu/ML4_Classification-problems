@@ -7,7 +7,7 @@ from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from utils.ginirocauc import S21RocAuc
+from utils.metrics import S21RocAuc
 
 from sklearn.metrics import (
     average_precision_score,
