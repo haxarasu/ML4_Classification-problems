@@ -4,7 +4,7 @@
 
 ## Структура
 - `datasets/data/` — исходные CSV.
-- `requirments.txt` — зависимости (Python 3.10+).
+- `requirements.txt` — зависимости (Python 3.10+).
 - `src/main.ipynb` — основной файл.
 - `src/algorithms/` — `s21LogisticRegression`, `s21KNN`, `s21NaiveBayes`.
 - `src/utils/` — разбиение данных, генерация признаков, расчёт Gini/ROC-AUC, настройка пайплайна.
