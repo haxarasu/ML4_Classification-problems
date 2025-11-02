@@ -17,8 +17,6 @@ cd path\to\ML_project4
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-$env:PYTHONPATH = "${PWD}\src"
-jupyter notebook src/main.ipynb
 ```
 
 macOS / Linux (bash/zsh):
@@ -27,8 +25,6 @@ cd /path/to/ML_project4
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirments.txt
-export PYTHONPATH="$(pwd)/src"
-jupyter notebook src/main.ipynb
 ```
 
 Далее ожидается последовательное выполнение ячеек — загрузка данных, генерация признаков, обучение и подбор гиперпараметров.
